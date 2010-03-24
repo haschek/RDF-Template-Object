@@ -53,10 +53,31 @@ interface RDF_Template_Object
      */
     public function __get($name);
     
+    /* Magically call methods from the used RDF parser library or transform
+     * requests for predicates filtered by object types of the wrapped resource.
+     * Returns arrays of the objects.
+     *
+     * Use array of RDF Template Objects to return the object properties.
+     *
+     * Example:
+     * - $person->vcard_tel('vcard:Home', 'vcard:Cell') returns all vcard:Tel
+     *   resources which are rdf:type of vcard:Home and vcard:Cell
+     *
+     * @param string $name
+     * @param Array $types
+     */
+    public function __call($name, $types);
+    
     /* Transform RDF Template Objects to a string representation, usally used to
      * compare those objects
      */
     public function __toString();
+    
+    /* Query requests via SPARQL, return RDF Template Objects as results
+     *
+     * planned for later
+     */
+    // public function sparql($query);
     
     /* fetch RDF data for unknown objects which got an URI, return an RDF
      * Template Object

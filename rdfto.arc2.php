@@ -74,7 +74,7 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
      *
      * @parameter $name name of ARC2 resource variable or predicate
      *
-     * @return Array result array with simple types or ARC2_Template_Object
+     * @return Array result array with simple types or ARC2File_Template_Object
      */
     public function __get($name)
     {
@@ -144,6 +144,126 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
         
         return $objects;
     
+    }
+    
+    /* Magic method __CALL
+     * 
+     * Magically call methods from the used RDF parser library or transform
+     * requests for predicates filtered by object types of the wrapped resource.
+     * Returns arrays of the objects.
+     *
+     * @since 0.1
+     *
+     * @param string $name name of Arc2 method or predicate
+     * @param Array $types arguments for Arc2 method or rdf:type filter (use a
+     *                     minus '-' as prefix to exclude instances of rdf:type,
+     *                     e.g. '-vcard:Home'), last item of the array could be
+     *                     a boolean TRUE if the results should be interesected
+     *
+     * @return Array result array with simple types or ARC2File_Template_Object
+     */
+    public function __call($name, $types)
+    {
+        // check for existing methods in Arc2 resource object
+        // TODO
+        
+        // emulate predicate requests filtered by rdf:type
+        
+        // no filters attached
+        if (count($types) == 0) return $this->$name;
+        
+        // get results without filtering
+        $references = $this->$name;
+        
+        // check intersect argument
+        if ($types[(count($types)-1)] === true)
+        {
+            $types = array_slice($types, 0, -1);
+            $intersect = true;
+        }
+        else
+        {
+            $intersect = false;
+        }
+        
+        // part add/sub filters
+        $filters_add = array();
+        $filters_sub = array();
+        
+        foreach($types as $type)
+        {
+            if (substr($type, 0, 1) == '-')
+            {
+                $type = substr($type, 1);
+                $filters_sub[] = ($s = strpos($type, ':')) ? $this->resource->ns[(substr($type, 0, $s))].substr($type, $s+1) : $type;
+            }
+            else
+            {
+                $filters_add[] = ($s = strpos($type, ':')) ? $this->resource->ns[(substr($type, 0, $s))].substr($type, $s+1) : $type;
+            }
+        }
+        
+        // only use results with informations about rdf:type
+        
+        $references_types = array();
+        
+        foreach ($references as $id => $ref)
+        {
+            if (!is_object($ref) ||
+                !isset($this->resource->index[$ref->uri]['http://www.w3.org/1999/02/22-rdf-syntax-ns#type']))
+            {
+                unset($references[$id]);
+            }
+            else
+            {
+                foreach ($this->resource->index[$ref->uri]['http://www.w3.org/1999/02/22-rdf-syntax-ns#type'] as $reftype)
+                {
+                    $references_types[$ref->uri][] = $reftype['value'];
+                }
+            }
+        }
+        
+        reset($references);
+        
+        // use substractive filters to delete items from results
+        # $this->resource->index[$this->uri]['http://www.w3.org/1999/02/22-rdf-syntax-ns#type'][0]['value']
+        
+        foreach ($references as $id => $ref)
+        {
+            foreach ($filters_sub as $type)
+            {
+                if (array_search($type, $references_types[$ref->uri]) !== false)
+                {
+                    unset($references[$id]);
+                    break;
+                }
+            }
+        }
+        
+        reset($references);
+        
+        // use additive filters to keep result items
+        
+        foreach ($references as $id => $ref)
+        {
+            $count_types = 0;
+            
+            foreach ($filters_add as $type)
+            {
+                if (array_search($type, $references_types[$ref->uri]) !== false)
+                {
+                    $count_types++;
+                }
+            }
+            
+            if ($count_types == 0 || ($intersect && $count_types != count($filters_add)))
+            {
+                unset($references[$id]);
+            }
+        }
+        
+        return $references;
+        
     }
     
     /* TODO
@@ -506,6 +626,8 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
     {
         // $ARC2TO = $this;
         
+        if (!isset($cacheTimeActivity)) $cacheTimeActivity = $this->cacheTimeActivity;
+        
         if (!is_array($check) || count($check) == 0)
             $check = array('seeAlso', 'made', 'weblog', 'account');
 
@@ -580,7 +702,7 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
         {
             $feedIndex = null;
         
-            if (false === ($feedIndex = $this->getCache(array('name'=>$feed, 'space'=>'FoafpressActivity'))))
+            if (false === ($feedIndex = $this->getCache(array('name'=>$feed, 'space'=>'FoafpressActivity', 'time'=>$cacheTimeActivity))))
             {
                 // parse feed
                 $feedParser = ARC2::getRDFParser();
