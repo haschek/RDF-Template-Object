@@ -315,14 +315,23 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
                 // check cache for data
                 if (false === ($linkedData = $this->getCache(array('name'=>$uriAbs, 'space'=>'FoafpressDataAbs'))))
                 {
-                    if (is_array($linkedData) && count($linkedData) == 0) die($uriAbs);
+                    // if (is_array($linkedData) && count($linkedData) == 0) die($uriAbs);
                 
                     if ($this->level < $this->levelMax &&
                         $this->requests < $this->requestsMax)
                     {
                         // parse feed
-                        $dataParser = ARC2::getRDFParser();
-                        $dataParser->parse($uriAbs, null, 0, $this->requestsTimeout);
+                        $dataParser = ARC2::getRDFParser(array('reader_timeout'=>3, 'keep_time_limit'=>true));
+                        /*
+                        if (!isset($dataParser->reader)) {
+                          ARC2::inc('Reader');
+                          $dataParser->reader = & new ARC2_Reader($dataParser->a, $dataParser);
+                        }
+                        $dataParser->reader->timeout = $this->requestsTimeout;
+                        //*/
+                        //$dataParser->parse($uriAbs, null, 0, $this->requestsTimeout);
+                        $dataParser->parse($uriAbs, null);
+                        //print_r(array($uriAbs=>$dataParser->reader->getResponseHeaders()));
                         $this->requests++;
                         if (is_object($dataParser))
                         {
