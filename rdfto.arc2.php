@@ -32,8 +32,6 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
 
     public $ignoreUris = array();
 
-    public $logUsage = array(); // debug log
-    
     public $templateImage = 'SET TEMPLATE FOR IMAGE';
     
 
@@ -58,7 +56,7 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
         $this->resource = $arc2_resource;
         $this->uri = $arc2_resource->uri;
         $this->updateNamespacePrefix();
-        $this->logUsage[] = 'init: count '.count($this->resource->index).' -- memory '.intval(memory_get_usage(true)/1024).'kb';
+        $this->addLogMessage('init: count '.count($this->resource->index).' -- memory '.intval(memory_get_usage(true)/1024).'kb');
         $this->includeSameAs($this->uri);
         
         return;
@@ -284,7 +282,7 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
     {
         // $testuri = ''; // may defined by sub class for debug checks
         
-        $this->logUsage[] = '  --> request data: '.$uri.' ('.$alias.')';
+        $this->addLogMessage('  --> request data: '.$uri.' ('.$alias.')');
 
         $indexedData = null;
         
@@ -337,18 +335,18 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
                         {
                             $linkedData = $dataParser->getSimpleIndex(0);
                             // save cache
-                            $this->logUsage[] = '  --> save to cache: '.$uriAbs;
+                            $this->addLogMessage('  --> save to cache: '.$uriAbs);
                             $this->saveCache(array('data'=>$linkedData, 'name'=>$uriAbs, 'space'=>'FoafpressDataAbs', 'time'=>true));
                         }
                         unset($dataParser);
                     }
 
-                    $this->logUsage[] = '  --> read: '.$uriAbs.' ('.count($linkedData).' elements)';
+                    $this->addLogMessage('  --> read: '.$uriAbs.' ('.count($linkedData).' elements)');
                     
                 }
                 else
                 {
-                    $this->logUsage[] = '  --> read from cache: '.$uriAbs.' ('.count($linkedData).' elements)';
+                    $this->addLogMessage('  --> read from cache: '.$uriAbs.' ('.count($linkedData).' elements)');
                 }
 
                 // check outdated cache as fallback
@@ -357,7 +355,7 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
                 {
                     if ($linkedData = $this->getCache(array('name'=>$uriAbs, 'space'=>'FoafpressDataAbs', 'time'=>-1)))
                     {
-                        $this->logUsage[] = '  --> read from OUTDATED cache: '.$uriAbs.' ('.count($linkedData).' elements)';
+                        $this->addLogMessage('  --> read from OUTDATED cache: '.$uriAbs.' ('.count($linkedData).' elements)');
                     }
                 }
                 
@@ -394,7 +392,7 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
                         unset($bnodes);
                         */
                         
-                        $this->logUsage[] = '  --> use: '.$uri.' ('.count($indexedData[$uri]).' elements)';
+                        $this->addLogMessage('  --> use: '.$uri.' ('.count($indexedData[$uri]).' elements)');
 
                         if (isset($testuri) && $uri == $testuri) die('<pre>'.print_r($indexedData, true).'</pre>');
 
@@ -407,7 +405,7 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
             }
             else
             {
-                $this->logUsage[] = '  --> read from cache: '.$uri.' ('.count($indexedData[$uri]).' elements)';
+                $this->addLogMessage('  --> read from cache: '.$uri.' ('.count($indexedData[$uri]).' elements)');
             }
             
         } // end of if (substr($uri, 0 , 1) != '_')
@@ -448,13 +446,13 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
                 $ARC2TO->level++;
             }
             
-            $this->logUsage[] = 'now: count '.count($this->resource->index).' -- memory '.intval(memory_get_usage(true)/1024).'kb';
+            $this->addLogMessage('now: count '.count($this->resource->index).' -- memory '.intval(memory_get_usage(true)/1024).'kb');
             return $ARC2TO;
 
         }
         else
         {
-            $this->logUsage[] = 'now: count '.count($this->resource->index).' -- memory '.intval(memory_get_usage(true)/1024).'kb';
+            $this->addLogMessage('now: count '.count($this->resource->index).' -- memory '.intval(memory_get_usage(true)/1024).'kb');
 
             // no data or error, only return requested uri
             return $uri;
@@ -762,6 +760,15 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
         
         return $activity;
         
+    }
+
+    /* Write message to log
+     *
+     * you may implement it for debugging reasons
+     */
+    protected function addLogMessage($msg)
+    {
+        return true;
     }
     
 }
