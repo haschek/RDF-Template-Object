@@ -526,8 +526,10 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
     
     /* TODO
      * @since 0.1
+     *
+     * @param boolean $strict If true, then only use literals in prefered languages, otherwise use first literal as fallback
      */
-    public function getLiteral(Array $predicates = array(), Array $preferedLanguages = array())
+    public function getLiteral(Array $predicates = array(), Array $preferedLanguages = array(), $strict = false)
     {
         $languages = $preferedLanguages;
         
@@ -550,8 +552,11 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
                     }
                 }
 
-                return (is_object($o[0]))?$o[0]->uri:$o[0];
-                break;
+                if ($strict === false)
+                {
+                    return (is_object($o[0]))?$o[0]->uri:$o[0];
+                    break;
+                }
             }
         }
         
