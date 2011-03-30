@@ -748,6 +748,7 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
                         $activity['stream'][$i]['title'] = $content['http://purl.org/rss/1.0/title'][0]['value'];
                         $activity['stream'][$i]['content'] = (isset($content['http://purl.org/rss/1.0/modules/content/encoded']))?$content['http://purl.org/rss/1.0/modules/content/encoded'][0]['value']:null;
                         $activity['stream'][$i]['output'] = '<a href="'.$activity['stream'][$i]['link'].'">'.htmlspecialchars(strip_tags($activity['stream'][$i]['title']), ENT_COMPAT, 'UTF-8').'</a>'; //TODO do not transform html-entities a second time
+                        $activity['stream'][$i]['contentarray_origin'] = $content;
                         $sortByDate[$i] = $activity['stream'][$i]['date'];
                         // orgacheck
                         $uniqueUris[] = $activity['stream'][$i]['link'];
