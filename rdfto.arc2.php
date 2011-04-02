@@ -641,7 +641,7 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
         if (!isset($cacheTimeActivity)) $cacheTimeActivity = $this->cacheTimeActivity;
         
         if (!is_array($check) || count($check) == 0)
-            $check = array('seeAlso', 'made', 'weblog', 'account');
+            $check = array('seeAlso', 'made', 'weblog', 'account', 'homepage');
 
         if ($numberItems == null) $numberItems = 50;
         $numberItems = intval($numberItems);
@@ -656,7 +656,7 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
         if (array_search('made', $check) !== false)
             $foaf_made = $this->_nld_foaf_made;
 
-        // get all rdfs:seeAlso in foaf:Document
+        // get all foaf:weblog in foaf:Document
         $weblog_seeAlso = array();
         if (array_search('weblog', $check) !== false)
         {
@@ -670,7 +670,21 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
             unset($foaf_weblog);
         }
         
-        // get all rdfs:seeAlso in foaf:OnlineAccount
+        // get all foaf:homepage in foaf:Document
+        $homepage_seeAlso = array();
+        if (array_search('weblog', $check) !== false)
+        {
+            $foaf_homepage = $this->_nld_foaf_homepage;
+            foreach($foaf_homepage as $homepage)
+            {
+                if (is_object($homepage) && $homepage->_nld_rdfs_seeAlso)
+                    $homepage_seeAlso = array_merge($homepage_seeAlso, $homepage->_nld_rdfs_seeAlso);
+                unset($homepage);
+            }
+            unset($foaf_homepage);
+        }
+        
+        // get all foaf:holdsAccount in foaf:OnlineAccount
         $account_seeAlso = array();
         if (array_search('account', $check) !== false)
         {
@@ -685,8 +699,8 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
         }
         
         // check for type, must be rss:channel
-        $possibleFeeds = array_unique(array_merge($rdfs_seeAlso, $foaf_made, $weblog_seeAlso, $account_seeAlso));
-        unset($rdfs_seeAlso, $foaf_made, $weblog_seeAlso, $account_seeAlso);
+        $possibleFeeds = array_unique(array_merge($rdfs_seeAlso, $foaf_made, $weblog_seeAlso, $account_seeAlso, $homepage_seeAlso));
+        unset($rdfs_seeAlso, $foaf_made, $weblog_seeAlso, $account_seeAlso, $homepage_seeAlso);
 
         $confirmedFeeds = array();
         
