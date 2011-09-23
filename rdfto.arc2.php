@@ -672,7 +672,7 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
         
         // get all foaf:homepage in foaf:Document
         $homepage_seeAlso = array();
-        if (array_search('weblog', $check) !== false)
+        if (array_search('homepage', $check) !== false)
         {
             $foaf_homepage = $this->_nld_foaf_homepage;
             foreach($foaf_homepage as $homepage)
