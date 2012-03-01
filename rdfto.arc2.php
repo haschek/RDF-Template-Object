@@ -30,9 +30,13 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
     public $requestsUris = array(); // contains all requested URIs, must be additionally saved because we cannot check the array for unsuccesful requests and sameAs data
     public $requestsTimeout = 3;
 
+    public $user_agent_string = 'User-Agent: RDFTO/ARC Reader (+http://arc.semsol.org/)';
+
     public $ignoreUris = array();
 
-    public $templateImage = 'SET TEMPLATE FOR IMAGE';
+    public $cache_space_prefix = 'RDFTO'; // e.g. 'MyApplication'
+
+    public $templateImage = 'SET TEMPLATE FOR IMAGE'; // e.g. '<img src="##URL##" alt="##DESC##"/>'
     
 
     /* Constructor for Template Object
@@ -296,7 +300,7 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
             $this->requestsUris[] = $uri;
         
             // test cache for indexed data of uri
-            if (false === ($indexedData = $this->getCache(array('name'=>$uri, 'space'=>'FoafpressData'))))
+            if (false === ($indexedData = $this->getCache(array('name'=>$uri, 'space'=>$this->cache_space_prefix.'Data'))))
             {
                 // no data cached - request data from uri
                 
@@ -311,7 +315,7 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
                 $linkedData = null;
             
                 // check cache for data
-                if (false === ($linkedData = $this->getCache(array('name'=>$uriAbs, 'space'=>'FoafpressDataAbs'))))
+                if (false === ($linkedData = $this->getCache(array('name'=>$uriAbs, 'space'=>$this->cache_space_prefix.'DataAbs'))))
                 {
                     // if (is_array($linkedData) && count($linkedData) == 0) die($uriAbs);
                 
@@ -319,7 +323,12 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
                         $this->requests < $this->requestsMax)
                     {
                         // parse feed
-                        $dataParser = ARC2::getRDFParser(array('reader_timeout'=>3, 'keep_time_limit'=>true));
+                        $dataParser = ARC2::getRDFParser(array(
+                                                            'reader_timeout'=>$this->requestsTimeout,
+                                                            'http_user_agent_header' => $this->user_agent_string,
+                                                            'keep_time_limit'=>true
+                                                            )
+                                                        );
                         /*
                         if (!isset($dataParser->reader)) {
                           ARC2::inc('Reader');
@@ -336,7 +345,7 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
                             $linkedData = $dataParser->getSimpleIndex(0);
                             // save cache
                             $this->addLogMessage('  --> save to cache: '.$uriAbs);
-                            $this->saveCache(array('data'=>$linkedData, 'name'=>$uriAbs, 'space'=>'FoafpressDataAbs', 'time'=>true));
+                            $this->saveCache(array('data'=>$linkedData, 'name'=>$uriAbs, 'space'=>$this->cache_space_prefix.'DataAbs', 'time'=>true));
                         }
                         unset($dataParser);
                     }
@@ -353,7 +362,7 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
                 // better old data than no data :)
                 if (!$linkedData)
                 {
-                    if ($linkedData = $this->getCache(array('name'=>$uriAbs, 'space'=>'FoafpressDataAbs', 'time'=>-1)))
+                    if ($linkedData = $this->getCache(array('name'=>$uriAbs, 'space'=>$this->cache_space_prefix.'DataAbs', 'time'=>-1)))
                     {
                         $this->addLogMessage('  --> read from OUTDATED cache: '.$uriAbs.' ('.count($linkedData).' elements)');
                     }
@@ -399,7 +408,7 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
                         unset($linkedData);
                         
                         // save cache for indexed data of uri
-                        $this->saveCache(array('data'=>$indexedData, 'name'=>$uri, 'space'=>'FoafpressData', 'time'=>true));
+                        $this->saveCache(array('data'=>$indexedData, 'name'=>$uri, 'space'=>$this->cache_space_prefix.'Data', 'time'=>true));
                     }
                 }
             }
@@ -728,16 +737,21 @@ class ARC2File_Template_Object implements RDF_Template_Object, RDF_Template_Help
         {
             $feedIndex = null;
         
-            if (false === ($feedIndex = $this->getCache(array('name'=>$feed, 'space'=>'FoafpressActivity', 'time'=>$cacheTimeActivity))))
+            if (false === ($feedIndex = $this->getCache(array('name'=>$feed, 'space'=>$this->cache_space_prefix.'Activity', 'time'=>$cacheTimeActivity))))
             {
                 // parse feed
-                $feedParser = ARC2::getRDFParser();
+                $feedParser = ARC2::getRDFParser(array(
+                                                    'reader_timeout'=>$this->requestsTimeout,
+                                                    'http_user_agent_header' => $this->user_agent_string,
+                                                    'keep_time_limit'=>true
+                                                    )
+                                                 );
                 $feedParser->parse($feed, null, 0, $this->requestsTimeout);
                 if (is_object($feedParser))
                 {
                     $feedIndex = $feedParser->getSimpleIndex(0);
                     // save cache
-                    $this->saveCache(array('data'=>$feedIndex, 'name'=>$feed, 'space'=>'FoafpressActivity', 'time'=>true));
+                    $this->saveCache(array('data'=>$feedIndex, 'name'=>$feed, 'space'=>$this->cache_space_prefix.'Activity', 'time'=>true));
                 }
             }
 
